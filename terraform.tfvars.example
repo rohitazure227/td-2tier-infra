@@ -1,0 +1,7 @@
+environment         = "dev"
+location            = "Canada Central"
+vm_count            = 2
+vm_size             = "Standard_B2s" # Low-cost VM choice perfect for learning environments
+ssh_public_key_path = "~/.ssh/<your-ssh-public-key>.pub"
+sql_admin_login     = "<entra-admin-email>"
+sql_admin_object_id = "<entra-admin-object-id>"
