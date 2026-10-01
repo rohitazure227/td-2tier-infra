@@ -56,3 +56,51 @@ stages:
       inputs:
         targetPath: 'tfplan'
         artifact: 'terraform-plan'
+
+  # Apply the approved Terraform plan
+- stage: Apply
+  displayName: 'Terraform Apply'
+  dependsOn: Plan
+  condition: succeeded()
+
+  jobs:
+
+  - deployment: TerraformApply
+    displayName: 'Terraform Apply'
+    environment: 'td-2tier-dev'
+
+    strategy:
+      runOnce:
+        deploy:
+
+          steps:
+
+          - checkout: self
+
+          # Download the Terraform plan artifact
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Terraform Plan'
+            inputs:
+              buildType: 'current'
+              artifactName: 'terraform-plan'
+              targetPath: '$(Pipeline.Workspace)/terraform-plan'
+
+          # Install the same Terraform version used locally
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: '1.16.2'
+
+          # Login to Azure and apply the saved plan
+          - task: AzureCLI@2
+            displayName: 'Terraform Apply'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+
+                terraform init -input=false
+
+                terraform apply -input=false \
+                  "$(Pipeline.Workspace)/terraform-plan/tfplan"
