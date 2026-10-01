@@ -40,4 +40,3 @@ steps:
       terraform validate
 
       terraform plan -input=false
-  
