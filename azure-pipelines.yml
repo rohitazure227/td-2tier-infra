@@ -7,42 +7,52 @@ pool:
 variables:
   azureServiceConnection: 'sc-td2tier-terraform'
 
-steps:
+stages:
 
-# Install the same Terraform version used locally
-- task: TerraformInstaller@1
-  displayName: 'Install Terraform'
-  inputs:
-    terraformVersion: '1.16.2'
+- stage: Plan
+  displayName: 'Terraform Plan'
 
-# Login to Azure using the Azure DevOps service connection
-- task: AzureCLI@2
-  displayName: 'Terraform Init, Validate and Plan'
-  inputs:
-    azureSubscription: '$(azureServiceConnection)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      echo "Creating temporary SSH public key file..."
+  jobs:
 
-      echo "$(ssh_public_key)" > "$(Agent.TempDirectory)/id_rsa.pub"
+  - job: TerraformPlan
+    displayName: 'Terraform Init, Validate and Plan'
 
-      export TF_VAR_environment="$(environment)"
-      export TF_VAR_location="$(location)"
-      export TF_VAR_vm_count="$(vm_count)"
-      export TF_VAR_vm_size="$(vm_size)"
-      export TF_VAR_ssh_public_key_path="$(Agent.TempDirectory)/id_rsa.pub"
-      export TF_VAR_sql_admin_login="$(sql_admin_login)"
-      export TF_VAR_sql_admin_object_id="$(sql_admin_object_id)"
+    steps:
 
-      terraform init -input=false
+    # Install the same Terraform version used locally
+    - task: TerraformInstaller@1
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: '1.16.2'
 
-      terraform validate
-      terraform plan -input=false -out=tfplan
+    # Login to Azure using the Azure DevOps service connection
+    - task: AzureCLI@2
+      displayName: 'Terraform Init, Validate and Plan'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Creating temporary SSH public key file..."
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish Terraform Plan'
-  inputs:
-    targetPath: 'tfplan'
-    artifact: 'terraform-plan'
-    
+          echo "$(ssh_public_key)" > "$(Agent.TempDirectory)/id_rsa.pub"
+
+          export TF_VAR_environment="$(environment)"
+          export TF_VAR_location="$(location)"
+          export TF_VAR_vm_count="$(vm_count)"
+          export TF_VAR_vm_size="$(vm_size)"
+          export TF_VAR_ssh_public_key_path="$(Agent.TempDirectory)/id_rsa.pub"
+          export TF_VAR_sql_admin_login="$(sql_admin_login)"
+          export TF_VAR_sql_admin_object_id="$(sql_admin_object_id)"
+
+          terraform init -input=false
+
+          terraform validate
+
+          terraform plan -input=false -out=tfplan
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Terraform Plan'
+      inputs:
+        targetPath: 'tfplan'
+        artifact: 'terraform-plan'
