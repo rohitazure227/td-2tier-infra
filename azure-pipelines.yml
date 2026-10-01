@@ -38,5 +38,11 @@ steps:
       terraform init -input=false
 
       terraform validate
+      terraform plan -input=false -out=tfplan
 
-      terraform plan -input=false
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Terraform Plan'
+  inputs:
+    targetPath: 'tfplan'
+    artifact: 'terraform-plan'
+    
