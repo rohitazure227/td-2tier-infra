@@ -77,7 +77,7 @@ stages:
 
           - checkout: self
 
-          # Download the Terraform plan artifact
+          # Download the exact Terraform plan created by the Plan stage
           - task: DownloadPipelineArtifact@2
             displayName: 'Download Terraform Plan'
             inputs:
@@ -91,7 +91,7 @@ stages:
             inputs:
               terraformVersion: '1.16.2'
 
-          # Login to Azure and apply the saved plan
+          # Login to Azure and apply the approved plan
           - task: AzureCLI@2
             displayName: 'Terraform Apply'
             inputs:
@@ -100,7 +100,22 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
 
+                echo "Creating temporary SSH public key file..."
+
+                echo "$(ssh_public_key)" > "$(Agent.TempDirectory)/id_rsa.pub"
+
+                export TF_VAR_environment="$(environment)"
+                export TF_VAR_location="$(location)"
+                export TF_VAR_vm_count="$(vm_count)"
+                export TF_VAR_vm_size="$(vm_size)"
+                export TF_VAR_ssh_public_key_path="$(Agent.TempDirectory)/id_rsa.pub"
+                export TF_VAR_sql_admin_login="$(sql_admin_login)"
+                export TF_VAR_sql_admin_object_id="$(sql_admin_object_id)"
+
+                echo "Initializing Terraform..."
+
                 terraform init -input=false
 
-                terraform apply -input=false \
-                  "$(Pipeline.Workspace)/terraform-plan/tfplan"
+                echo "Applying the approved Terraform plan..."
+
+                terraform apply -input=false "$(Pipeline.Workspace)/terraform-plan/tfplan"
