@@ -23,8 +23,21 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
+      echo "Creating temporary SSH public key file..."
+
+      echo "$(ssh_public_key)" > "$(Agent.TempDirectory)/id_rsa.pub"
+
+      export TF_VAR_environment="$(environment)"
+      export TF_VAR_location="$(location)"
+      export TF_VAR_vm_count="$(vm_count)"
+      export TF_VAR_vm_size="$(vm_size)"
+      export TF_VAR_ssh_public_key_path="$(Agent.TempDirectory)/id_rsa.pub"
+      export TF_VAR_sql_admin_login="$(sql_admin_login)"
+      export TF_VAR_sql_admin_object_id="$(sql_admin_object_id)"
+
       terraform init -input=false
 
       terraform validate
 
       terraform plan -input=false
+  
